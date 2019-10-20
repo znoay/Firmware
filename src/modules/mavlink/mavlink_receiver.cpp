@@ -814,7 +814,7 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 		bool is_land_sp = (bool)(set_position_target_local_ned.type_mask & 0x2000);
 		bool is_loiter_sp = (bool)(set_position_target_local_ned.type_mask & 0x3000);
 		bool is_idle_sp = (bool)(set_position_target_local_ned.type_mask & 0x4000);
-		bool is_soaring_sp = (bool)(set_position_target_local_ned.type_mask & 0x5000);
+		bool is_soaring_sp = (bool)(set_position_target_local_ned.type_mask & 0x8000);
 
 		offboard_control_mode.timestamp = hrt_absolute_time();
 		_offboard_control_mode_pub.publish(offboard_control_mode);
