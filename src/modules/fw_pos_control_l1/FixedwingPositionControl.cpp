@@ -656,89 +656,96 @@ FixedwingPositionControl::control_position(const Vector2f &curr_pos, const Vecto
 			mission_throttle = pos_sp_curr.cruising_throttle;
 		}
 
-		if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
+		switch (pos_sp_curr.type) {
+		case position_setpoint_s::SETPOINT_TYPE_IDLE:
 			_att_sp.thrust_body[0] = 0.0f;
 			_att_sp.roll_body = 0.0f;
 			_att_sp.pitch_body = 0.0f;
+			break;
 
-		} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_POSITION) {
-			/* waypoint is a plain navigation waypoint */
-			_l1_control.navigate_waypoints(prev_wp, curr_wp, curr_pos, nav_speed_2d);
-			_att_sp.roll_body = _l1_control.get_roll_setpoint();
-			_att_sp.yaw_body = _l1_control.nav_bearing();
+		case position_setpoint_s::SETPOINT_TYPE_POSITION: {
+				/* waypoint is a plain navigation waypoint */
+				_l1_control.navigate_waypoints(prev_wp, curr_wp, curr_pos, nav_speed_2d);
+				_att_sp.roll_body = _l1_control.get_roll_setpoint();
+				_att_sp.yaw_body = _l1_control.nav_bearing();
 
-			tecs_update_pitch_throttle(pos_sp_curr.alt,
-						   calculate_target_airspeed(mission_airspeed, ground_speed),
-						   radians(_param_fw_p_lim_min.get()) - radians(_param_fw_psp_off.get()),
-						   radians(_param_fw_p_lim_max.get()) - radians(_param_fw_psp_off.get()),
-						   _param_fw_thr_min.get(),
-						   _param_fw_thr_max.get(),
-						   mission_throttle,
-						   false,
-						   radians(_param_fw_p_lim_min.get()));
-
-		} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-
-			/* waypoint is a loiter waypoint */
-			float loiter_radius = pos_sp_curr.loiter_radius;
-			uint8_t loiter_direction = pos_sp_curr.loiter_direction;
-
-			if (fabsf(pos_sp_curr.loiter_radius) < FLT_EPSILON) {
-				loiter_radius = _param_nav_loiter_rad.get();
-				loiter_direction = (loiter_radius > 0) ? 1 : -1;
-
+				tecs_update_pitch_throttle(pos_sp_curr.alt,
+							   calculate_target_airspeed(mission_airspeed, ground_speed),
+							   radians(_param_fw_p_lim_min.get()) - radians(_param_fw_psp_off.get()),
+							   radians(_param_fw_p_lim_max.get()) - radians(_param_fw_psp_off.get()),
+							   _param_fw_thr_min.get(),
+							   _param_fw_thr_max.get(),
+							   mission_throttle,
+							   false,
+							   radians(_param_fw_p_lim_min.get()));
 			}
 
-			_l1_control.navigate_loiter(curr_wp, curr_pos, loiter_radius, loiter_direction, nav_speed_2d);
+			break;
 
-			_att_sp.roll_body = _l1_control.get_roll_setpoint();
-			_att_sp.yaw_body = _l1_control.nav_bearing();
+		case position_setpoint_s::SETPOINT_TYPE_LOITER: {
+				/* waypoint is a loiter waypoint */
+				float loiter_radius = pos_sp_curr.loiter_radius;
+				uint8_t loiter_direction = pos_sp_curr.loiter_direction;
 
-			float alt_sp = pos_sp_curr.alt;
-
-			if (pos_sp_next.type == position_setpoint_s::SETPOINT_TYPE_LAND && pos_sp_next.valid
-			    && _l1_control.circle_mode() && _param_fw_lnd_earlycfg.get()) {
-				// We're in a loiter directly before a landing WP. Enable our landing configuration (flaps,
-				// landing airspeed and potentially tighter throttle control) already such that we don't
-				// have to do this switch (which can cause significant altitude errors) close to the ground.
-				_tecs.set_time_const_throt(_param_fw_thrtc_sc.get() * _param_fw_t_thro_const.get());
-				mission_airspeed = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
-				_att_sp.apply_flaps = true;
-			}
-
-			if (in_takeoff_situation()) {
-				alt_sp = max(alt_sp, _takeoff_ground_alt + _param_fw_clmbout_diff.get());
-				_att_sp.roll_body = constrain(_att_sp.roll_body, radians(-5.0f), radians(5.0f));
-			}
-
-			if (_land_abort) {
-				if (pos_sp_curr.alt - _global_pos.alt  < _param_fw_clmbout_diff.get()) {
-					// aborted landing complete, normal loiter over landing point
-					abort_landing(false);
-
-				} else {
-					// continue straight until vehicle has sufficient altitude
-					_att_sp.roll_body = 0.0f;
+				if (fabsf(pos_sp_curr.loiter_radius) < FLT_EPSILON) {
+					loiter_radius = _param_nav_loiter_rad.get();
+					loiter_direction = (loiter_radius > 0) ? 1 : -1;
 				}
 
-				_tecs.set_time_const_throt(_param_fw_thrtc_sc.get() * _param_fw_t_thro_const.get());
+				_l1_control.navigate_loiter(curr_wp, curr_pos, loiter_radius, loiter_direction, nav_speed_2d);
+
+				_att_sp.roll_body = _l1_control.get_roll_setpoint();
+				_att_sp.yaw_body = _l1_control.nav_bearing();
+
+				float alt_sp = pos_sp_curr.alt;
+
+				if (pos_sp_next.type == position_setpoint_s::SETPOINT_TYPE_LAND && pos_sp_next.valid
+				    && _l1_control.circle_mode() && _param_fw_lnd_earlycfg.get()) {
+					// We're in a loiter directly before a landing WP. Enable our landing configuration (flaps,
+					// landing airspeed and potentially tighter throttle control) already such that we don't
+					// have to do this switch (which can cause significant altitude errors) close to the ground.
+					_tecs.set_time_const_throt(_param_fw_thrtc_sc.get() * _param_fw_t_thro_const.get());
+					mission_airspeed = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
+					_att_sp.apply_flaps = true;
+				}
+
+				if (in_takeoff_situation()) {
+					alt_sp = max(alt_sp, _takeoff_ground_alt + _param_fw_clmbout_diff.get());
+					_att_sp.roll_body = constrain(_att_sp.roll_body, radians(-5.0f), radians(5.0f));
+				}
+
+				if (_land_abort) {
+					if (pos_sp_curr.alt - _global_pos.alt  < _param_fw_clmbout_diff.get()) {
+						// aborted landing complete, normal loiter over landing point
+						abort_landing(false);
+
+					} else {
+						// continue straight until vehicle has sufficient altitude
+						_att_sp.roll_body = 0.0f;
+					}
+
+					_tecs.set_time_const_throt(_param_fw_thrtc_sc.get() * _param_fw_t_thro_const.get());
+				}
+
+				tecs_update_pitch_throttle(alt_sp,
+							   calculate_target_airspeed(mission_airspeed, ground_speed),
+							   radians(_param_fw_p_lim_min.get()) - radians(_param_fw_psp_off.get()),
+							   radians(_param_fw_p_lim_max.get()) - radians(_param_fw_psp_off.get()),
+							   _param_fw_thr_min.get(),
+							   _param_fw_thr_max.get(),
+							   _param_fw_thr_cruise.get(),
+							   false,
+							   radians(_param_fw_p_lim_min.get()));
 			}
+			break;
 
-			tecs_update_pitch_throttle(alt_sp,
-						   calculate_target_airspeed(mission_airspeed, ground_speed),
-						   radians(_param_fw_p_lim_min.get()) - radians(_param_fw_psp_off.get()),
-						   radians(_param_fw_p_lim_max.get()) - radians(_param_fw_psp_off.get()),
-						   _param_fw_thr_min.get(),
-						   _param_fw_thr_max.get(),
-						   _param_fw_thr_cruise.get(),
-						   false,
-						   radians(_param_fw_p_lim_min.get()));
-
-		} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LAND) {
+		case position_setpoint_s::SETPOINT_TYPE_LAND:
 			control_landing(curr_pos, ground_speed, pos_sp_prev, pos_sp_curr);
+			break;
 
-		} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF) {
+		case position_setpoint_s::SETPOINT_TYPE_TAKEOFF:
 			control_takeoff(curr_pos, ground_speed, pos_sp_prev, pos_sp_curr);
+			break;
 		}
 
 		/* reset landing state */
