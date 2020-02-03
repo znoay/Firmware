@@ -190,9 +190,6 @@ private:
 	float	_althold_epv{0.0f};				///< the position estimate accuracy when engaging alt hold
 	bool	_was_in_deadband{false};			///< wether the last stick input was in althold deadband
 
-	position_setpoint_s _hdg_hold_prev_wp {};		///< position where heading hold started
-	position_setpoint_s _hdg_hold_curr_wp {};		///< position to which heading hold flies
-
 	hrt_abstime _control_position_last_called{0};		///< last call of control_position
 
 	/* Landing */

@@ -839,19 +839,19 @@ FixedwingPositionControl::control_position(const Vector2f &curr_pos, const Vecto
 					_hdg_hold_enabled = true;
 					_hdg_hold_yaw = _yaw;
 
-					get_waypoint_heading_distance(_hdg_hold_yaw, _hdg_hold_prev_wp, _hdg_hold_curr_wp, true);
+					get_waypoint_heading_distance(_hdg_hold_yaw, _pos_sp_triplet.previous, _pos_sp_triplet.current, true);
 				}
 
 				/* we have a valid heading hold position, are we too close? */
-				float dist = get_distance_to_next_waypoint(_global_pos.lat, _global_pos.lon, _hdg_hold_curr_wp.lat,
-						_hdg_hold_curr_wp.lon);
+				float dist = get_distance_to_next_waypoint(_global_pos.lat, _global_pos.lon,
+						_pos_sp_triplet.current.lat, _pos_sp_triplet.current.lon);
 
 				if (dist < HDG_HOLD_REACHED_DIST) {
-					get_waypoint_heading_distance(_hdg_hold_yaw, _hdg_hold_prev_wp, _hdg_hold_curr_wp, false);
+					get_waypoint_heading_distance(_hdg_hold_yaw, _pos_sp_triplet.previous, _pos_sp_triplet.current, false);
 				}
 
-				Vector2f prev_wp{(float)_hdg_hold_prev_wp.lat, (float)_hdg_hold_prev_wp.lon};
-				Vector2f curr_wp{(float)_hdg_hold_curr_wp.lat, (float)_hdg_hold_curr_wp.lon};
+				Vector2f prev_wp{(float)_pos_sp_triplet.previous.lat, (float)_pos_sp_triplet.previous.lon};
+				Vector2f curr_wp{(float)_pos_sp_triplet.current.lat, (float)_pos_sp_triplet.current.lon};
 
 				/* populate l1 control setpoint */
 				_l1_control.navigate_waypoints(prev_wp, curr_wp, curr_pos, ground_speed);
@@ -1520,12 +1520,19 @@ FixedwingPositionControl::Run()
 		_alt_reset_counter = _global_pos.alt_reset_counter;
 		_pos_reset_counter = _global_pos.lat_lon_reset_counter;
 
+		vehicle_control_mode_poll();
+
+		if (_control_mode.flag_control_auto_enabled) {
+			_pos_sp_triplet_sub.update(&_pos_sp_triplet);
+
+		} else if (_control_mode.flag_control_manual_enabled) {
+			_manual_control_sub.update(&_manual);
+		}
+
 		airspeed_poll();
-		_manual_control_sub.update(&_manual);
-		_pos_sp_triplet_sub.update(&_pos_sp_triplet);
 		vehicle_attitude_poll();
 		vehicle_command_poll();
-		vehicle_control_mode_poll();
+
 		_vehicle_land_detected_sub.update(&_vehicle_land_detected);
 		_vehicle_status_sub.update(&_vehicle_status);
 		_vehicle_acceleration_sub.update();
