@@ -205,9 +205,11 @@ FixedwingPositionControl::airspeed_poll()
 void
 FixedwingPositionControl::vehicle_attitude_poll()
 {
-	if (_vehicle_attitude_sub.update(&_att)) {
+	vehicle_attitude_s att;
+
+	if (_vehicle_attitude_sub.update(&att)) {
 		/* set rotation matrix and euler angles */
-		_R_nb = Quatf(_att.q);
+		_R_nb = Quatf(att.q);
 
 		// if the vehicle is a tailsitter we have to rotate the attitude by the pitch offset
 		// between multirotor and fixed wing flight
@@ -817,10 +819,9 @@ FixedwingPositionControl::control_position(const Vector2f &curr_pos, const Vecto
 		    fabsf(_manual.r) < HDG_HOLD_MAN_INPUT_THRESH) {
 
 			/* heading / roll is zero, lock onto current heading */
-			if (fabsf(_vehicle_rates_sub.get().xyz[2]) < HDG_HOLD_YAWRATE_THRESH && !_yaw_lock_engaged) {
+			if (fabsf(_yawspeed) < HDG_HOLD_YAWRATE_THRESH && !_yaw_lock_engaged) {
 				// little yaw movement, lock to current heading
 				_yaw_lock_engaged = true;
-
 			}
 
 			/* user tries to do a takeoff in heading hold mode, reset the yaw setpoint on every iteration
@@ -1032,8 +1033,7 @@ FixedwingPositionControl::control_takeoff(const Vector2f &curr_pos, const Vector
 
 	if (_runway_takeoff.runwayTakeoffEnabled()) {
 		if (!_runway_takeoff.isInitialized()) {
-			Eulerf euler(Quatf(_att.q));
-			_runway_takeoff.init(euler.psi(), _global_pos.lat, _global_pos.lon);
+			_runway_takeoff.init(_yaw, _global_pos.lat, _global_pos.lon);
 
 			/* need this already before takeoff is detected
 			 * doesn't matter if it gets reset when takeoff is detected eventually */
@@ -1529,7 +1529,20 @@ FixedwingPositionControl::Run()
 		_vehicle_land_detected_sub.update(&_vehicle_land_detected);
 		_vehicle_status_sub.update(&_vehicle_status);
 		_vehicle_acceleration_sub.update();
-		_vehicle_rates_sub.update();
+
+		if (_vehicle_angular_velocity_sub.updated()) {
+			vehicle_angular_velocity_s angular_velocity;
+
+			if (_vehicle_angular_velocity_sub.copy(&angular_velocity)) {
+				if (_vtol_tailsitter) {
+					// tailsitters use the multicopter frame as reference
+					_yawspeed = angular_velocity.xyz[0];
+
+				} else {
+					_yawspeed = angular_velocity.xyz[2];
+				}
+			}
+		}
 
 		Vector2f curr_pos((float)_global_pos.lat, (float)_global_pos.lon);
 		Vector2f ground_speed(_global_pos.vel_n, _global_pos.vel_e);

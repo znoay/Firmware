@@ -160,7 +160,7 @@ private:
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};		///< vehicle command subscription
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};	///< vehicle land detected subscription
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};			///< vehicle status subscription
-	uORB::SubscriptionData<vehicle_angular_velocity_s>	_vehicle_rates_sub{ORB_ID(vehicle_angular_velocity)};
+	uORB::Subscription _vehicle_angular_velocity_sub{ORB_ID(vehicle_angular_velocity)};
 
 	uORB::Publication<vehicle_attitude_setpoint_s>		_attitude_sp_pub;
 	uORB::Publication<position_controller_status_s>		_pos_ctrl_status_pub{ORB_ID(position_controller_status)};			///< navigation capabilities publication
@@ -169,7 +169,6 @@ private:
 
 	manual_control_setpoint_s	_manual {};			///< r/c channel data
 	position_setpoint_triplet_s	_pos_sp_triplet {};		///< triplet of mission items
-	vehicle_attitude_s		_att {};			///< vehicle attitude setpoint
 	vehicle_attitude_setpoint_s	_att_sp {};			///< vehicle attitude setpoint
 	vehicle_command_s		_vehicle_command {};		///< vehicle commands
 	vehicle_control_mode_s		_control_mode {};		///< control mode
@@ -237,9 +236,10 @@ private:
 	float _groundspeed_undershoot{0.0f};			///< ground speed error to min. speed in m/s
 
 	Dcmf _R_nb;				///< current attitude
-	float _roll{0.0f};
-	float _pitch{0.0f};
-	float _yaw{0.0f};
+	float _roll{0.f};
+	float _pitch{0.f};
+	float _yaw{0.f};
+	float _yawspeed{0.f};
 
 	bool _reinitialize_tecs{true};				///< indicates if the TECS states should be reinitialized (used for VTOL)
 	bool _is_tecs_running{false};
