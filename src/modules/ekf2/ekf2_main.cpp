@@ -253,7 +253,8 @@ private:
 	bool _callback_registered{false};
 
 	// because we can have several distance sensor instances with different orientations
-	uORB::Subscription _range_finder_subs[ORB_MULTI_MAX_INSTANCES] {{ORB_ID(distance_sensor), 0}, {ORB_ID(distance_sensor), 1}, {ORB_ID(distance_sensor), 2}, {ORB_ID(distance_sensor), 3}};
+	static constexpr int MAX_RNG_SENSOR_COUNT = 4;
+	uORB::Subscription _range_finder_subs[MAX_RNG_SENSOR_COUNT] {{ORB_ID(distance_sensor), 0}, {ORB_ID(distance_sensor), 1}, {ORB_ID(distance_sensor), 2}, {ORB_ID(distance_sensor), 3}};
 	int _range_finder_sub_index = -1; // index for downward-facing range finder subscription
 
 	// because we can have multiple GPS instances
@@ -803,7 +804,6 @@ void Ekf2::Run()
 
 		ekf2_timestamps.airspeed_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.distance_sensor_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
-		ekf2_timestamps.gps_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.optical_flow_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.vehicle_air_data_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
 		ekf2_timestamps.vehicle_magnetometer_timestamp_rel = ekf2_timestamps_s::RELATIVE_TIMESTAMP_INVALID;
@@ -927,8 +927,6 @@ void Ekf2::Run()
 			if (_gps_subs[0].copy(&gps)) {
 				fillGpsMsgWithVehicleGpsPosData(_gps_state[0], gps);
 				_gps_alttitude_ellipsoid[0] = gps.alt_ellipsoid;
-
-				ekf2_timestamps.gps_timestamp_rel = (int16_t)((int64_t)gps.timestamp / 100 - (int64_t)ekf2_timestamps.timestamp / 100);
 			}
 		}
 
@@ -1748,7 +1746,7 @@ void Ekf2::resetPreFlightChecks()
 
 int Ekf2::getRangeSubIndex()
 {
-	for (unsigned i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+	for (unsigned i = 0; i < MAX_RNG_SENSOR_COUNT; i++) {
 		distance_sensor_s report{};
 
 		if (_range_finder_subs[i].update(&report)) {
