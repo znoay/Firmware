@@ -109,7 +109,7 @@ target_link_libraries(px4 PRIVATE
 	-Wl,-Map=${PX4_CONFIG}.map
 	-Wl,--warn-common
 	-Wl,--gc-sections
-	-Wl,--print-memory-usage
+#	-Wl,--print-memory-usage
 
 	-Wl,--start-group
 		${nuttx_libs}
