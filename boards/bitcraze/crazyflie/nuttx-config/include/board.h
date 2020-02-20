@@ -40,6 +40,7 @@
 /************************************************************************************
  * Included Files
  ************************************************************************************/
+#include "board_dma_map.h"
 
 #include <nuttx/config.h>
 
@@ -184,9 +185,6 @@
 #define GPIO_USART6_RX	GPIO_USART6_RX_1
 #define GPIO_USART6_TX	GPIO_USART6_TX_1
 
-/* UART DMA configuration for USART6 */
-#define DMAMAP_USART6_RX DMAMAP_USART6_RX_2
-
 /*
  * I2C
  *
@@ -212,13 +210,6 @@
 #define GPIO_SPI1_MISO	(GPIO_SPI1_MISO_1|GPIO_SPEED_50MHz)
 #define GPIO_SPI1_MOSI	(GPIO_SPI1_MOSI_1|GPIO_SPEED_50MHz)
 #define GPIO_SPI1_SCK	(GPIO_SPI1_SCK_1|GPIO_SPEED_50MHz)
-
-/* XXX since we allocate the HP work stack from CCM RAM on normal system startup,
-   SPI1 will never run in DMA mode - so we can just give it a random config here.
-   What we really need to do is to make DMA configurable per channel, and always
-   disable it for SPI1. */
-#define DMACHAN_SPI1_RX DMAMAP_SPI1_RX_1
-#define DMACHAN_SPI1_TX DMAMAP_SPI1_TX_2
 
 /************************************************************************************
  * Public Data
