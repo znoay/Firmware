@@ -6,8 +6,9 @@ sitl_bin="$1"
 debugger="$2"
 program="$3"
 model="$4"
-src_path="$5"
-build_path="$6"
+world="$5"
+src_path="$6"
+build_path="$7"
 # The rest of the arguments are files to copy into the working dir.
 
 echo SITL ARGS
@@ -16,6 +17,7 @@ echo sitl_bin: $sitl_bin
 echo debugger: $debugger
 echo program: $program
 echo model: $model
+echo world: $world
 echo src_path: $src_path
 echo build_path: $build_path
 
@@ -41,8 +43,8 @@ if [ "$model" == "" ] || [ "$model" == "none" ]; then
 	model="iris"
 fi
 
-if [ "$#" -lt 6 ]; then
-	echo usage: sitl_run.sh sitl_bin debugger program model src_path build_path
+if [ "$#" -lt 7 ]; then
+	echo usage: sitl_run.sh sitl_bin debugger program model world src_path build_path
 	echo ""
 	exit 1
 fi
@@ -60,7 +62,7 @@ fi
 cp "$src_path/Tools/posix_lldbinit" "$rootfs/.lldbinit"
 cp "$src_path/Tools/posix.gdbinit" "$rootfs/.gdbinit"
 
-shift 6
+shift 7
 for file in "$@"; do
 	cp "$file" $rootfs/
 done
@@ -76,8 +78,27 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 		if  [[ -z "$DONT_RUN" ]]; then
 			# Set the plugin path so Gazebo finds our model and sim
 			source "$src_path/Tools/setup_gazebo.bash" "${src_path}" "${build_path}"
+			if [ -z $PX4_SITL_WORLD ]; then
+				#Spawn predefined world
+				if [ "$world" == "none" ]; then
+					if [ -f ${src_path}/Tools/sitl_gazebo/worlds/${model}.world ]; then
+						echo "empty world, default world ${model}.world for model found"
+						gzserver --verbose "${src_path}/Tools/sitl_gazebo/worlds/${model}.world" &
+					else
+						echo "empty world, setting empty.world as default"
+						gzserver --verbose "${src_path}/Tools/sitl_gazebo/worlds/empty.world" &
+					fi
+				else
+					#Spawn empty world if world with model name doesn't exist
+					gzserver --verbose "${src_path}/Tools/sitl_gazebo/worlds/${world}.world" &
+				fi
+			else
+				# Spawn world from environment variable
+				gzserver --verbose $PX4_SITL_WORLD &
+			fi
 
-			gzserver --verbose "${src_path}/Tools/sitl_gazebo/worlds/${model}.world" &
+			gz model --spawn-file=${src_path}/Tools/sitl_gazebo/models/${model}/${model}.sdf --model-name=${model} -x 0.0 -y 0.0 -z 0.1
+
 			SIM_PID=`echo $!`
 
 			if [[ -n "$HEADLESS" ]]; then
