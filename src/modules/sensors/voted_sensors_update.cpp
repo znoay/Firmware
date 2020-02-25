@@ -794,7 +794,7 @@ void VotedSensorsUpdate::sensorsPoll(sensor_combined_s &raw, vehicle_air_data_s 
 
 			_baro_scale[0] = corrections.baro_scale_0;
 			_baro_scale[1] = corrections.baro_scale_1;
-			_baro_scale[1] = corrections.baro_scale_2;
+			_baro_scale[2] = corrections.baro_scale_2;
 		}
 	}
 
