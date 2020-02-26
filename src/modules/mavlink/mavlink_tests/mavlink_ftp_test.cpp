@@ -762,7 +762,6 @@ bool MavlinkFtpTest::_createdirectory_test()
 		uint8_t		error_code;
 	};
 	static const struct _testCase rgTestCases[] = {
-		{ "/etc/bogus",			false,	2, MavlinkFTP::kErrFailErrno},
 		{ _unittest_microsd_dir,	true,	0, MavlinkFTP::kErrNone},
 		{ _unittest_microsd_dir,	false,	1, MavlinkFTP::kErrFailFileExists},
 #ifdef __PX4_NUTTX
