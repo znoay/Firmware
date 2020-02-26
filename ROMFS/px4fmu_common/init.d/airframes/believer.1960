@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# @name The Plane
+#
+# @type Fixed Wing
+# @class Plane
+#
+# @output MAIN 1 Motor
+# @output MAIN 3 Motor
+#
+# @output MAIN2 Aileron  Left   Servo 1
+# @output MAIN4 Aileron  Right  Servo 2
+# @output MAIN5 V-Tail   Left   Servo 3
+# @output MAIN6 V-Tail   Right  Servo 4
+#
+# @maintainer Zachary Noay
+
+sh/etc/init.d/rc.fw_defaults
+
+if [$AUTOCNF == yes]
+then
+    param set FW_AIRSPD_MIN 10
+    param set FW_AIRSPD_TRIM 15
+    param set FW_AIRSPD_MAX 20
+
+    param set FW_MAN_P_MAX 55
+    param set FW_MAN_R_MAX 55
+    param set FW_R_LIM 55
+
+    param set FW_WR_FF 0.2
+    param set FW_WR_I 0.2
+    param set FW_WR_IMAX 0.8
+    param set FW_WR_P 1
+    param set FW_W_RMAX 0
+
+    param set PWM_DISARMED 1000
+fi
+
+#Fix-Wing MavType 1
+set MAV_TYPE 1
+
+#Mixer
+set Mixer Plane
+#PWM parameters for Main 1 & Main 1
+set PWM_OUT 13
