@@ -95,10 +95,10 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 			else
 				if [ -f ${src_path}/Tools/sitl_gazebo/worlds/${PX4_SITL_WORLD}.world ]; then
 					# Spawn world by name if exists in the worlds directory from environment variable
-					gzserver --verbose ${src_path}/Tools/sitl_gazebo/worlds/${PX4_SITL_WORLD}.world &
+					gzserver --verbose "${src_path}/Tools/sitl_gazebo/worlds/${PX4_SITL_WORLD}.world" &
 				else
 					# Spawn world from environment variable with absolute path
-					gzserver --verbose $PX4_SITL_WORLD &
+					gzserver --verbose "$PX4_SITL_WORLD" &
 				fi
 			fi
 
